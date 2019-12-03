@@ -66,6 +66,7 @@ instance.prototype.messageReceivedFromWebSocket = function(data) {
 	console.log('message received');
 	console.log(data);
 
+	//tile data was updated externally, reload all titles
 	if (data && data.toString().indexOf('"object":"scheduler","signal":6,"type":1') > -1) {
 		self.getTitleStatuses();
 	}
