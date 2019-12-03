@@ -220,10 +220,6 @@ instance.prototype.feedback = function(event) {
   var options = event.options
   console.log('------------')
   console.log('------------')
-  console.log('------------')
-  console.log('------------')
-  console.log('------------')
-  console.log('------------')
   console.log(event)
 
   if (event.type == 'on_air_status') {
