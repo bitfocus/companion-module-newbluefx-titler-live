@@ -1,6 +1,6 @@
 {
-  "name": "newbluetitler",
-  "version": "1.0.0",
+	"name": "newbluetitler",
+	"version": "1.0.0",
 	"api_version": "1.0.0",
 	"keywords": [
 		"Graphics"
@@ -9,10 +9,10 @@
 	"product": "Titler 4 Live Broadcast",
 	"shortname": "titler",
 	"description": "Module to control titler 4 Live",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC"
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "",
+	"license": "ISC"
 }

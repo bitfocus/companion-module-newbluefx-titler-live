@@ -20,7 +20,7 @@ function instance(system, id, config) {
 }
 
 instance.prototype.updateConfig = function(config) {
-	console.log('config updated');
+	//console.log('config updated');
 	var self = this;
 	self.config = config;
 	self.setVariableDefinitions([{}]);
@@ -50,7 +50,7 @@ instance.prototype.initWebSocket = function() {
 	});
 
 	ws.on('error', function incoming(data) {
-		console.log(`WebSocket error: ${data}`);
+		//console.log(`WebSocket error: ${data}`);
 	});
 };
 
@@ -63,8 +63,8 @@ instance.prototype.getTitleStatuses = function() {
 
 instance.prototype.messageReceivedFromWebSocket = function(data) {
 	var self = this;
-	console.log('message received');
-	console.log(data);
+	//console.log('message received');
+	//console.log(data);
 
 	//tile data was updated externally, reload all titles
 	if (data && data.toString().indexOf('"object":"scheduler","signal":6,"type":1') > -1) {
