@@ -13,8 +13,14 @@ function instance(system, id, config) {
 	// super-constructor
 	instance_skel.apply(this, arguments);
 	self.actions(); // export actions
-	self.initWebSocket();
 	self.setupFeedbacks();
+
+	if (!this.config || !this.config.host || !this.config.port){
+		return self;
+	}
+
+	self.initWebSocket();
+
 
 	return self;
 }
