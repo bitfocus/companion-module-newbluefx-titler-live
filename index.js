@@ -228,33 +228,7 @@ instance.prototype.actions = function(system) {
 	var self = this;
 	self.system.emit('instance_actions', self.id, {
 		set_on_air: {
-			label: 'Set Graphic On/Off Air',
-			options: [
-				{
-					type: 'textinput',
-					label: 'Title Id (zero-based)',
-					id: 'num',
-					default: '1',
-					regex: self.REGEX_NUMBER
-				},
-				{
-					type: 'textinput',
-					label: 'Playlist Id (zero-based)',
-					id: 'playlist',
-					default: '0',
-					regex: self.REGEX_NUMBER
-				},
-				{
-					type: 'dropdown',
-					label: 'On Air / Off Air',
-					id: 'mute',
-					choices: [
-						{ id: '0', label: 'Off Air' },
-						{ id: '1', label: 'On Air' },
-						{ id: '2', label: 'Toggle' }
-					]
-				}
-			]
+			label: 'Update Feedback & Variables'
 		}
 	});
 };
