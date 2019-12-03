@@ -1,6 +1,6 @@
-var instance_skel = require('../../instance_skel');
-const WebSocket = require('ws');
-var parseString = require('xml2js').parseString;
+var instance_skel  = require('../../instance_skel');
+const WebSocket    = require('ws');
+var parseString    = require('xml2js').parseString;
 
 var log;
 var ws;
