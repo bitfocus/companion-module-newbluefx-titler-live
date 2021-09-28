@@ -1,243 +1,211 @@
-var instance_skel  = require('../../instance_skel');
-const WebSocket    = require('ws');
-var parseString    = require('xml2js').parseString;
+const instance_skel = require('../../instance_skel')
+const QWebChannel = require('qwebchannel').QWebChannel
+const WebSocket = require('ws')
+let debug = () => {}
+let scheduler
 
-var log;
-var ws;
-var currentState = new Object();
-var variables = new Object();
-
-function instance(system, id, config) {
-	var self = this;
-	var inst = this;
-	// super-constructor
-	instance_skel.apply(this, arguments);
-	self.actions(); // export actions
-	self.setupFeedbacks();
-
-	if (!this.config || !this.config.host || !this.config.port){
-		return self;
+class instance extends instance_skel {
+	/**
+	 * Create an instance of the module
+	 *
+	 * @param {EventEmitter} system - the brains of the operation
+	 * @param {string} id - the instance ID
+	 * @param {Object} config - saved user configuration parameters
+	 * @since 1.0.0
+	 */
+	constructor(system, id, config) {
+		super(system, id, config)
+		this.titlesPlayStatus = []
+		this.initWebSocket()
+		this.setupFeedbacks()
+		this.actions() // export actions
 	}
 
-	self.initWebSocket();
-
-
-	return self;
-}
-
-instance.prototype.updateConfig = function(config) {
-	//console.log('config updated');
-	var self = this;
-	self.config = config;
-	self.setVariableDefinitions([{}]);
-	self.initWebSocket();
-};
-
-instance.prototype.initWebSocket = function() {
-	var self = this;
-	var ip = this.config.host;
-	var port = this.config.port;
-	ws = new WebSocket(`ws://${ip}:${port}`);
-	if (!ip || !port) {
-		return self;
+	init() {
+		this.status(this.STATE_WARNING)
+		this.CHOICES_TITLES = [{ id: 0, label: 'no titles loaded yet', play: 'Done' }]
+		this.on_air_status = []
+		debug = this.debug
+		log = this.log
+	}
+	updateConfig(config) {
+		debug('config updated')
+		this.config = config
+		this.initWebSocket()
 	}
 
-	ws.on('open', function open() {
-		//send init message
-		ws.send('{"id":101,"type":3}');
-		self.setupVariables();
-		setInterval(() => {
-			//self.getTitleStatuses()
-		}, 1500);
-	});
+	initWebSocket() {
+		let ip = this.config.host
+		let port = this.config.port
+		if (!ip || !port) {
+			return this
+		}
 
-	ws.on('message', function message(data) {
-		self.messageReceivedFromWebSocket(data);
-	});
+		let socket = new WebSocket(`ws://${ip}:${port}`)
+		socket.onclose = () => {
+			console.log('socket closed')
+		}
 
-	ws.on('error', function incoming(data) {
-		//console.log(`WebSocket error: ${data}`);
-	});
-};
+		socket.onerror = (err) => {
+			console.error(err)
+		}
 
-instance.prototype.getTitleStatuses = function() {
-	var playlistCount = this.config.playlistCount;
-	for (var i = 0; i < playlistCount; i++) {
-		ws.send(`{"type":6,"object":"scheduler","method":27,"args":["<newblue_ext command=\'readTitle\' channel=${i} />"],"id":${i}}`);
-	}
-};
+		socket.on('open', () => {
+			// Establish API connection.
+			new QWebChannel(socket, (channel) => {
+				scheduler = channel.objects.scheduler
+				this.status(this.STATE_OK) // status ok!
+			})
 
-instance.prototype.messageReceivedFromWebSocket = function(data) {
-	var self = this;
-	//console.log('message received');
-	//console.log(data);
-
-	//tile data was updated externally, reload all titles
-	if (data && data.toString().indexOf('"object":"scheduler","signal":6,"type":1') > -1) {
-		self.getTitleStatuses();
-	}
-
-	if (data && data.toString().indexOf('readTitle') > -1) {
-		let json = JSON.parse(data);
-		let playlistId = json.id;
-
-		parseString(json.data, function(err, result) {
-			if (!result.newblue_ext || !result.newblue_ext.title) {
-				return;
-			}
-			result.newblue_ext.title.forEach(element => {
-				var id = element.$.position;
-				var tileName = element.$.name;
-				var playStatus = element.running[0].$.playState;
-
-				element.variables[0].variable.forEach(variable => {
-					if (variable.$) {
-						var value = variable.$.value;
-						var name = variable.$.name;
-						var firstWord = value.substr(0, value.indexOf(' '));
-						const VAR_NAME_VARIABLES = `playlist-${playlistId}-title-${id}-var-${name}`;
-						variables[VAR_NAME_VARIABLES] = {
-							label: VAR_NAME_VARIABLES,
-							name: VAR_NAME_VARIABLES
-						};
-						self.setVariable(VAR_NAME_VARIABLES, firstWord);
+			setTimeout(() => {
+				scheduler.scheduleCommand('getTitleControlInfo', {}, {}, (reply) => {
+					// Parse titleInfo and extract for now only the information we need
+					this.CHOICES_TITLES.length = 0
+					for (const [key, value] of Object.entries(JSON.parse(reply))) {
+						if (key == 'titles') {
+							value.forEach((element) => {
+								this.CHOICES_TITLES.push({ id: element.id, label: element.name, play: element.status })
+								this.titlesPlayStatus[element.id] = element.status
+							})
+						}
 					}
-				});
+					this.actions()
+					this.setupFeedbacks()
+					this.checkFeedbacks('on_air_status')
+				})
+				scheduler.scheduleCommand('subscribe', { channel: '-1', id: 'all', events: 'play' }, {})
+				// Once subscriptions are enabled, listen for onNotify callbacks.
+				scheduler.onNotify.connect((notification) => {
+					// Convert the payload string into a JSON object.
+					let jsonReply = JSON.parse(notification)
+					// And then use the object to inform the state...
+					this.titlesPlayStatus[jsonReply.id]=jsonReply.play
+					this.checkFeedbacks('on_air_status')
+				})
+			}, 1500) // need to make the qtwebchannel a promise
+		})
 
-				const VAR_NAME_TILE_NAME = `playlist-${playlistId}-title-${id}-title-name}`;
-				variables[VAR_NAME_TILE_NAME] = {
-					label: VAR_NAME_TILE_NAME,
-					name: VAR_NAME_TILE_NAME
-				};
-				self.setVariable(VAR_NAME_TILE_NAME, tileName);
+		socket.on('error', (data) => {
+			console.log(`WebSocket error: ${data}`)
+		})
 
-				currentState[`${id}-${playlistId}`] = playStatus != 'Off';
-			});
-
-			let vars = [];
-			for (var key in variables) {
-				vars.push(variables[key]);
-			}
-
-			self.setVariableDefinitions(vars);
-		});
+		socket.on('close', () => {
+			console.warn('Websocket closed')
+		})
 	}
 
-	self.checkFeedbacks();
-};
-
-instance.prototype.setupVariables = function() {
-	var self = this;
-	self.getTitleStatuses();
-};
-
-instance.prototype.action = function(system) {
-	var self = this;
-	setTimeout(() => {
-		self.getTitleStatuses();
-	}, 1000);
-
-	setTimeout(() => {
-		self.getTitleStatuses();
-	}, 3000);
-};
-
-instance.prototype.init = function() {
-	var self = this;
-	self.status(self.STATE_OK); // status ok!
-	debug = self.debug;
-	log = self.log;
-};
-
-instance.prototype.config_fields = function() {
-	var self = this;
-	return [
-		{
-			type: 'textinput',
-			id: 'host',
-			label: 'Target IP',
-			tooltip: 'The IP of the web server',
-			width: 6,
-			regex: self.REGEX_IP
-		},
-		{
-			type: 'textinput',
-			id: 'port',
-			label: 'Port',
-			tooltip: 'The port of the web socket server',
-			width: 6,
-			regex: self.REGEX_NUMBER
-		},
-		{
-			type: 'textinput',
-			id: 'playlistCount',
-			label: 'Playlist Count',
-			tooltip: 'The number of playlists',
-			width: 6,
-			default: 2,
-			regex: self.REGEX_NUMBER
-		}
-	];
-};
-
-instance.prototype.setupFeedbacks = function() {
-	var self = this;
-	const feedbacks = {};
-	feedbacks['on_air_status'] = {
-		label: 'Change colors when On-Air',
-		description: 'Change colors when On-Air',
-		options: [
+	config_fields() {
+		return [
 			{
-				type: 'colorpicker',
-				label: 'Foreground color',
-				id: 'fg',
-				default: this.rgb(0, 0, 0)
-			},
-			{
-				type: 'colorpicker',
-				label: 'Background color',
-				id: 'bg',
-				default: this.rgb(255, 0, 0)
+				type: 'textinput',
+				id: 'host',
+				label: 'Target IP',
+				tooltip: 'The IP of the web server',
+				width: 6,
+				regex: this.REGEX_IP,
 			},
 			{
 				type: 'textinput',
-				label: 'Position',
-				id: 'position',
-				default: 1,
-				regex: self.REGEX_NUMBER
+				id: 'port',
+				label: 'Port',
+				tooltip: 'The port of the web socket server',
+				width: 6,
+				default: 9023,
+				regex: this.REGEX_NUMBER,
 			},
-			{
-				type: 'textinput',
-				label: 'Playlist Id (zero-based)',
-				id: 'playlist',
-				default: '0',
-				regex: self.REGEX_NUMBER
-			}
 		]
-	};
-	self.setFeedbackDefinitions(feedbacks);
-};
-
-instance.prototype.feedback = function(event) {
-	var self = this;
-	var options = event.options;
-
-	if (event.type == 'on_air_status') {
-		if (currentState[`${options.position}-${options.playlist}`]) {
-			return { color: options.fg, bgcolor: options.bg };
-		}
 	}
-	return {};
-};
 
-instance.prototype.actions = function(system) {
-	var self = this;
-	self.system.emit('instance_actions', self.id, {
-		set_on_air: {
-			label: 'Update Feedback & Variables'
+	setupFeedbacks() {
+		const feedbacks = {}
+		feedbacks['on_air_status'] = {
+			label: 'Change colors when On-Air',
+			description: 'Change colors when On-Air',
+			options: [
+				{
+					type: 'colorpicker',
+					label: 'Foreground color',
+					id: 'fg',
+					default: this.rgb(0, 0, 0),
+				},
+				{
+					type: 'colorpicker',
+					label: 'Background color',
+					id: 'bg',
+					default: this.rgb(255, 0, 0),
+				},
+				{
+					type: 'dropdown',
+					id: 'title',
+					label: 'Title',
+					width: 6,
+					choices: this.CHOICES_TITLES,
+				},
+			],
 		}
-	});
-};
+		this.setFeedbackDefinitions(feedbacks)
+	}
 
-instance_skel.extendedBy(instance);
-exports = module.exports = instance;
+	/**
+	 * Clean up the instance before it is destroyed.
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 */
+	destroy() {
+		debug('destroy', this.id)
+	}
+
+	feedback(event) {
+		let options = event.options
+
+		if (event.type == 'on_air_status') {
+			if (this.titlesPlayStatus[options.title] == 'Running' || this.titlesPlayStatus[options.title] == 'Paused') {
+				return { color: options.fg, bgcolor: options.bg }
+			}
+		}
+		return {}
+	}
+
+	actions(system) {
+		const actions = {}
+
+		actions['go_title'] = {
+			label: 'go title',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'title',
+					label: 'Title',
+					width: 6,
+					choices: this.CHOICES_TITLES,
+				},
+			],
+		}
+
+		this.setActions(actions)
+	}
+
+		/**
+	 * Executes the provided action.
+	 *
+	 * @param {Object} action - the action to be executed
+	 * @access public
+	 * @since 1.0.0
+	 */
+		 async action(action) {
+			const opt = action.options
+			let cmd
+	
+			switch (action.action) {
+				case 'go_title':
+					scheduler.scheduleAction("automatic", "", opt.title, {});
+					break
+			}
+			if (cmd != undefined) {
+				// do stuff
+			}
+		}
+	
+}
+exports = module.exports = instance

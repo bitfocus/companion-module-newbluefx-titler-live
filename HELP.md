@@ -1,11 +1,10 @@
 ## NewBlueFX Titler
 
 ### Configuration
-* Type in the IP address and port of the device.
-* Type in the number of playlists.
+* Type in the IP address and port (standard 9023) of the device.
 
 ### Available Actions
-* Update Feedback & Variables
+* Set title live (automatic action)
 
 ### Available Feedbacks
 * Change colors when On-Air

@@ -1,6 +1,6 @@
 {
 	"name": "newbluefx-titler",
-	"version": "1.0.1",
+	"version": "2.0.0",
 	"api_version": "1.0.0",
 	"keywords": [
 		"Graphics"
@@ -13,10 +13,10 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "",
-	"license": "ISC",
+	"author": "Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>",
+	"license": "MIT",
 	"dependencies": {
-		"ws": "^7.2.0",
-		"xml2js": "^0.4.22"
+		"qwebchannel": "^5.9.0",
+		"ws": "^7.2.0"
 	}
 }
