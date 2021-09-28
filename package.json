@@ -1,6 +1,6 @@
 {
 	"name": "newbluefx-titler",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"api_version": "1.0.0",
 	"keywords": [
 		"Graphics"
@@ -17,6 +17,6 @@
 	"license": "MIT",
 	"dependencies": {
 		"qwebchannel": "^5.9.0",
-		"ws": "^7.2.0"
+		"ws": "^7.4.6"
 	}
 }
