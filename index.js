@@ -22,7 +22,7 @@ class instance extends instance_skel {
 	}
 
 	init() {
-		this.status(this.STATE_WARNING)
+		this.status(this.STATE_WARNING, "no connection")
 		this.CHOICES_TITLES = [{ id: 0, label: 'no titles loaded yet', play: 'Done' }]
 		this.on_air_status = []
 		debug = this.debug
@@ -42,13 +42,6 @@ class instance extends instance_skel {
 		}
 
 		let socket = new WebSocket(`ws://${ip}:${port}`)
-		socket.onclose = () => {
-			console.log('socket closed')
-		}
-
-		socket.onerror = (err) => {
-			console.error(err)
-		}
 
 		socket.on('open', () => {
 			// Establish API connection.
@@ -87,10 +80,12 @@ class instance extends instance_skel {
 
 		socket.on('error', (data) => {
 			console.log(`WebSocket error: ${data}`)
+			this.status(this.STATUS_ERROR, data)
 		})
 
 		socket.on('close', () => {
 			console.warn('Websocket closed')
+			this.status(this.STATUS_WARNING, "Socket closed")
 		})
 	}
 
@@ -102,6 +97,7 @@ class instance extends instance_skel {
 				label: 'Target IP',
 				tooltip: 'The IP of the web server',
 				width: 6,
+				default: '127.0.0.1',
 				regex: this.REGEX_IP,
 			},
 			{
