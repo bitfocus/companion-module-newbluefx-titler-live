@@ -53,18 +53,18 @@ class instance extends instance_skel {
 			setTimeout(() => {
 				this.getControlInfo()
 
-				scheduler.scheduleCommand('subscribe', { channel: '-1', id: 'all', events: 'play' }, {})
+				scheduler.scheduleCommand('subscribe', { channel: '-1', id: 'all', events: 'play,control' }, {})
 				// Once subscriptions are enabled, listen for onNotify callbacks.
 				scheduler.onNotify.connect((notification) => {
 					// Convert the payload string into a JSON object.
 					let jsonReply = JSON.parse(notification)
-					// If ID is no present reload titles
-					if(this.titlesPlayStatus[jsonReply.id] == undefined) {
+					if (jsonReply.control == 'addTitle') {
 						this.getControlInfo()
+					} else {
+						// And then use the object to inform the state...
+						this.titlesPlayStatus[jsonReply.id] = jsonReply.play
+						this.checkFeedbacks('on_air_status')
 					}
-					// And then use the object to inform the state...
-					this.titlesPlayStatus[jsonReply.id] = jsonReply.play
-					this.checkFeedbacks('on_air_status')
 				})
 			}, 1500) // need to make the qtwebchannel a promise
 		})
@@ -97,7 +97,6 @@ class instance extends instance_skel {
 					})
 				}
 			}
-
 			this.actions()
 			this.setupFeedbacks()
 			this.checkFeedbacks('on_air_status')
@@ -242,29 +241,28 @@ class instance extends instance_skel {
 					style: 'text',
 					text: '',
 					size: '14',
-					color: this.rgb(255,255,255),
-					bgcolor: this.rgb(0,0,0),
+					color: this.rgb(255, 255, 255),
+					bgcolor: this.rgb(0, 0, 0),
 					png64: this.CHOICES_TITLES[title].image.slice(22),
 				},
 				actions: [
 					{
 						action: 'go_title',
 						options: {
-							title: this.CHOICES_TITLES[title].id
-						}
-					}
+							title: this.CHOICES_TITLES[title].id,
+						},
+					},
 				],
 				feedbacks: [
 					{
 						type: 'on_air_status',
 						options: {
 							title: this.CHOICES_TITLES[title].id,
-							bg: this.rgb(255,0,0),
-							fg: this.rgb(0,0,0),
+							bg: this.rgb(255, 0, 0),
+							fg: this.rgb(0, 0, 0),
 						},
-					}
-
-				]
+					},
+				],
 			})
 		}
 		this.setPresetDefinitions(presets)
