@@ -16,6 +16,7 @@ class instance extends instance_skel {
 	constructor(system, id, config) {
 		super(system, id, config)
 		this.titlesPlayStatus = []
+		this.titlesImage = []
 		this.initWebSocket()
 		this.setupFeedbacks()
 		this.actions() // export actions
@@ -26,7 +27,6 @@ class instance extends instance_skel {
 		this.CHOICES_TITLES = [{ id: 0, label: 'no titles loaded yet', play: 'Done' }]
 		this.on_air_status = []
 		debug = this.debug
-		log = this.log
 	}
 	updateConfig(config) {
 		debug('config updated')
@@ -53,12 +53,13 @@ class instance extends instance_skel {
 			setTimeout(() => {
 				this.getControlInfo()
 
-				scheduler.scheduleCommand('subscribe', { channel: '-1', id: 'all', events: 'play,control' }, {})
+				scheduler.scheduleCommand('subscribe', { channel: '-1', id: 'all', events: 'play,control,data' }, {})
 				// Once subscriptions are enabled, listen for onNotify callbacks.
 				scheduler.onNotify.connect((notification) => {
 					// Convert the payload string into a JSON object.
 					let jsonReply = JSON.parse(notification)
-					if (jsonReply.control == 'addTitle') {
+					// console.log(jsonReply)
+					if (jsonReply.control == 'addTitle' || jsonReply.data == 'Update') {
 						this.getControlInfo()
 					} else {
 						// And then use the object to inform the state...
@@ -93,13 +94,14 @@ class instance extends instance_skel {
 							play: element.status,
 							image: element.image,
 						})
+						this.titlesImage[element.id] = element.image
 						this.titlesPlayStatus[element.id] = element.status
 					})
 				}
 			}
 			this.actions()
-			this.setupFeedbacks()
 			this.checkFeedbacks('on_air_status')
+			this.checkFeedbacks('update_thumbnails')
 			this.initPresets()
 		})
 	}
@@ -114,15 +116,6 @@ class instance extends instance_skel {
 				default: '127.0.0.1',
 				regex: this.REGEX_IP,
 			},
-			// {
-			// 	type: 'textinput',
-			// 	id: 'port',
-			// 	label: 'Port',
-			// 	tooltip: 'The port of the web socket server',
-			// 	width: 6,
-			// 	default: 9023,
-			// 	regex: this.REGEX_NUMBER,
-			// },
 		]
 	}
 
@@ -153,6 +146,19 @@ class instance extends instance_skel {
 				},
 			],
 		}
+		feedbacks['update_thumbnails'] = {
+			label: 'Update thumbnail on data change',
+			description: 'Update thumbnail on data change',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'title',
+					label: 'Title',
+					width: 6,
+					choices: this.CHOICES_TITLES,
+				},
+			],
+		}
 		this.setFeedbackDefinitions(feedbacks)
 	}
 
@@ -174,6 +180,10 @@ class instance extends instance_skel {
 				return { color: options.fg, bgcolor: options.bg }
 			}
 		}
+		if (event.type == 'update_thumbnails') {
+			return { png64: this.titlesImage[options.title].slice(22) }
+		}
+
 		return {}
 	}
 
@@ -260,6 +270,12 @@ class instance extends instance_skel {
 							title: this.CHOICES_TITLES[title].id,
 							bg: this.rgb(255, 0, 0),
 							fg: this.rgb(0, 0, 0),
+						},
+					},
+					{
+						type: 'update_thumbnails',
+						options: {
+							title: this.CHOICES_TITLES[title].id,
 						},
 					},
 				],
