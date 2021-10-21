@@ -85,6 +85,8 @@ class instance extends instance_skel {
 		scheduler.scheduleCommand('getTitleControlInfo', { icon: true, width: 72, height: 72 }, {}, (reply) => {
 			// Parse titleInfo and extract for now only the information we need
 			this.CHOICES_TITLES.length = 0
+			let itemsProcessed = 0;
+			
 			for (const [key, value] of Object.entries(JSON.parse(reply))) {
 				if (key == 'titles') {
 					value.forEach((element) => {
@@ -96,13 +98,17 @@ class instance extends instance_skel {
 						})
 						this.titlesImage[element.id] = element.image
 						this.titlesPlayStatus[element.id] = element.status
+						itemsProcessed++;
+						if(itemsProcessed === value.length) {
+							callback();
+							this.actions()
+							this.checkFeedbacks('on_air_status')
+							this.checkFeedbacks('update_thumbnails')
+							this.initPresets()
+						}
 					})
-				}
+					}
 			}
-			this.actions()
-			this.checkFeedbacks('on_air_status')
-			this.checkFeedbacks('update_thumbnails')
-			this.initPresets()
 		})
 	}
 	config_fields() {
