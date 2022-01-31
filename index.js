@@ -100,7 +100,7 @@ class instance extends instance_skel {
 						this.titlesPlayStatus[element.id] = element.status
 						itemsProcessed++;
 						if(itemsProcessed === value.length) {
-							callback();
+							// callback();
 							this.actions()
 							this.checkFeedbacks('on_air_status')
 							this.checkFeedbacks('update_thumbnails')
@@ -205,12 +205,8 @@ class instance extends instance_skel {
 					label: 'Title',
 					width: 6,
 					choices: this.CHOICES_TITLES,
-				},
+				}
 			],
-		}
-
-		actions['getTitleInfo'] = {
-			label: 'Update Title info into companion',
 		}
 
 		this.setActions(actions)
@@ -249,7 +245,7 @@ class instance extends instance_skel {
 	 */
 	initPresets(updates) {
 		let presets = []
-
+	
 		for (const title in this.CHOICES_TITLES) {
 			presets.push({
 				category: 'Title control',
