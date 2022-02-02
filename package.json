@@ -18,5 +18,13 @@
 	"dependencies": {
 		"qwebchannel": "^5.9.0",
 		"ws": "^7.4.6"
+	},
+	"homepage": "https://github.com/bitfocus/companion-module-newbluefx-titler#readme",
+	"bugs": {
+		"url": "https://github.com/bitfocus/companion-module-newbluefx-titler/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitfocus/companion-module-newbluefx-titler.git"
 	}
 }
