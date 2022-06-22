@@ -16,7 +16,7 @@
     "author": "adam (adamf@newblueinc.com)",
     "license": "MIT",
     "dependencies": {
-        "qwebchannel": "^5.9.0",
+        "qwebchannel": "5.9.0",
         "ws": "^7.4.6"
     }
 }

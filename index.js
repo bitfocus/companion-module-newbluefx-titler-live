@@ -15,7 +15,10 @@ const feedbacks = require('./lib/feedbacks')
 const crypto = require('crypto')
 const sharp = require('sharp')
 
-const QWebChannel = require('qwebchannel').QWebChannel
+// We need to use a specific version (5.9) of QWebChannel because 5.15 which ships with CP 2.2.1
+// breaks compatibility with Titler live
+const QWebChannelEx = require('./contrib/qwebchannel').QWebChannel
+
 const fetch = require('node-fetch')
 const WebSocket = require('ws')
 const { reject } = require('lodash')
@@ -95,7 +98,6 @@ class instance extends instance_skel {
         } else {
             this.refreshIntegrations();
         }
-
     }
 
     init() {
@@ -110,7 +112,7 @@ class instance extends instance_skel {
      */
 
     refreshIntegrations(self) {
-        console.log(`Refresh integrations....`);
+
         this.allowsFeedbackCacheRebuilding = true;
         this.setupFeedbacks(self);
         this.setupActions(self);
@@ -156,7 +158,7 @@ class instance extends instance_skel {
             }
 
             // Establish API connection.
-            new QWebChannel(socket, (channel) => {
+            new QWebChannelEx(socket, (channel) => {
 
                 scheduler = channel.objects.scheduler;
                 this.scheduler = scheduler;
@@ -177,6 +179,7 @@ class instance extends instance_skel {
 
                         //kind = 'actions' | 'presets' | 'feedbacks'
                         scheduler._cmp_v1_query(kind, (reply) => {
+
                             try {
                                 if (kind == "actions") resolve(reply.companion_actions);
                                 else if (kind == "presets") resolve(reply.companion_presets);
