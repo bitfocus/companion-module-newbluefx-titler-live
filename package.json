@@ -1,30 +1,22 @@
 {
-	"name": "newbluefx-titler",
-	"version": "2.0.5",
-	"api_version": "1.0.0",
-	"keywords": [
-		"Graphics"
-	],
-	"manufacturer": "NewBlueFX",
-	"product": "Titler 4 Live Broadcast",
-	"shortname": "titler",
-	"description": "Module to control titler 4 Live",
-	"main": "index.js",
-	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"author": "Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>",
-	"license": "MIT",
-	"dependencies": {
-		"qwebchannel": "^5.9.0",
-		"ws": "^7.4.6"
-	},
-	"homepage": "https://github.com/bitfocus/companion-module-newbluefx-titler#readme",
-	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-newbluefx-titler/issues"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/bitfocus/companion-module-newbluefx-titler.git"
-	}
+    "name": "newbluefx-titler",
+    "version": "3.0.0",
+    "api_version": "1.0.0",
+    "keywords": [
+        "Graphics"
+    ],
+    "manufacturer": "NewBlue",
+    "product": "Titler Live",
+    "shortname": "Titler",
+    "description": " NewBlue Titler Live",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "adam (adamf@newblueinc.com)",
+    "license": "MIT",
+    "dependencies": {
+        "qwebchannel": "5.9.0",
+        "ws": "^7.4.6"
+    }
 }
